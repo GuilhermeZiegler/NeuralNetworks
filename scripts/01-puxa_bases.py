@@ -108,7 +108,7 @@ assets = [
 start_date = datetime(2022,6,1)
 
 # Directory to save the data
-base_dir = os.path.join('..', 'bases', 'ativos')
+base_dir = os.path.join('..', 'bases', 'assets')
 
 # login variables
 login = 'YourAccountNumber' # should be a integer
