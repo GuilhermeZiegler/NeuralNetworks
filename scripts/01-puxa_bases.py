@@ -4,25 +4,9 @@
 # Required installations
 import sys
 import subprocess
-def install_packages():
-    required_packages = [
-        "MetaTrader5",
-        "numpy",
-        "pandas",
-        "scikit-learn",
-        "joblib",
-        "pyarrow",
-        "fastparquet"
-    ]
+import os
 
-    for package in required_packages:
-        try:
-            __import__(package)
-        except ImportError:
-            print(f"Instalando {package}...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-    print("Todos os pacotes estão instalados.")
-
+from myFunctions import install_packages
 install_packages()
 
 ## importing the packages
@@ -31,7 +15,6 @@ import pandas as pd
 from datetime import datetime
 import MetaTrader5 as mt5
 from datetime import datetime
-import os
 
 ## script functions
 def connect_to_mt5(login: int = None,

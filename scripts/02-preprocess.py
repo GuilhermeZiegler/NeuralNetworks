@@ -1,68 +1,23 @@
 import sys
 import subprocess
 import pkg_resources
-
-def install_packages():
-    required_packages = [
-        "numpy",
-        "pandas",
-        "scikit-learn",
-        "joblib",
-        "pyarrow",
-        "fastparquet",
-        "plotly",
-        "matplotlib"
-    ]
-    
-    installed_packages = {pkg.key for pkg in pkg_resources.working_set}
-
-    for package in required_packages:
-        if package.lower() not in installed_packages:
-            print(f"Installing {package}...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        else:
-            print(f"{package} is already installed.")
-    
-    print("All packages are verified")
-
-install_packages()
-import pandas as pd
 import os
+
+from myFunctions import install_packages, save_table 
+### packages required
+install_packages()
+
+import pandas as pd
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-input_file = '..//data//assets//'
-output_file = '..//data//preprocess//'
+### folders 
+input_dir = '..//data//assets//'
+output_dir = '..//data//preprocess//'
 table_dir='..//results//tables//'
-
-def save_table(df: pd.DataFrame, 
-               title: str = 'Table', 
-               table_dir: str = '../results/tables/'):
-    """
-    Saves the DataFrame as a CSV file. If a file with the exact title exists,
-    it will overwrite the existing file. Otherwise, it will create a new file
-    with the next available number.
-
-    Args:
-        df (pd.DataFrame): DataFrame to be saved.
-        title (str): Title to be used in the CSV filename.
-        output_path (str): Path where the file will be saved.
-    """
-    os.makedirs(os.path.join(table_dir, 'csv'), exist_ok=True)
-    csv_path = os.path.join(table_dir, 'csv')
-    existing_files = [f for f in os.listdir(csv_path) if title in f and f.endswith('.csv')]
-    if existing_files:
-        file_name_csv = existing_files[0]
-        csv_output_path = os.path.join(csv_path, file_name_csv)
-    else:
-        num = len([f for f in os.listdir(csv_path) if f.startswith('Tabela_')])
-        num += 1
-        file_name_csv = f"Tabela_{num}_{title}.csv"
-        csv_output_path = os.path.join(csv_path, file_name_csv)
-
-    df.to_csv(csv_output_path, index=False)
-    print(f"Tabela saved as CSV: {csv_output_path}")
     
+### Script functions
+
 def check_data(input_dir: str):
     """
     Loads all .parquet files from the specified directory, processes them by:
@@ -164,6 +119,9 @@ def process_data(input_dir: str,
         processed_df = pd.concat([processed_df, df], axis=1)
 
     processed_df = processed_df.loc[:, ~processed_df.columns.duplicated()]
+    os.makedirs(output_dir, exist_ok=True)
     processed_df.to_parquet(f'{output_dir}/data.parquet')
     return processed_df
 
+### Preprocessing data 
+data = process_data(input_dir=input_dir, output_dir=output_dir)

@@ -1,41 +1,21 @@
 import sys
 import subprocess
 import pkg_resources
-
-def install_packages():
-    required_packages = [
-        "numpy",
-        "pandas",
-        "scikit-learn",
-        "joblib",
-        "pyarrow",
-        "fastparquet",
-        "plotly",
-        "matplotlib"
-    ]
-    
-    installed_packages = {pkg.key for pkg in pkg_resources.working_set}
-
-    for package in required_packages:
-        if package.lower() not in installed_packages:
-            print(f"Installing {package}...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        else:
-            print(f"{package} is already installed.")
-    
-    print("All packages are verified")
-
-install_packages()
-import pandas as pd
 import os
+from myFunctions import install_packages
+install_packages()
+## importing the packages
+import pandas as pd
 import numpy as np
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.set_option('display.max_columns', None)
 
-
+### Seting folders
 input_dir = '..//data//preprocess//'
 output_dir = '..//data//features//'
+
+### Script Functions
 
 # Function to calculate OBV
 def calculate_obv(df):
@@ -173,6 +153,7 @@ def calculate_vwap(df):
             print(f"VWAP_{asset}")
     return df
 
+# Function to calculate EMA
 def calculate_emas(df, periods=[9, 21, 55]):
     """
     Calculate Exponential Moving Averages (EMAs) for each asset and return a DataFrame with columns 'EMA<period>_<asset>'.
@@ -208,3 +189,17 @@ df = calculate_rsi(df)
 df = calculate_atr(df)
 df = calculate_vwap(df)
 df = calculate_emas(df)
+
+### Cleaning nan inputed by indicators
+first_non_null_date = df[df.notna().all(axis=1)].iloc[0]['time']
+next_day = first_non_null_date + pd.Timedelta(days=1)
+next_day = next_day.replace(hour=9, minute=0, second=0, microsecond=0)  # Linha alterada
+next_day_row = df[df['time'].dt.date == next_day.date()].iloc[0]
+df = df[df['time'] >= next_day]
+print('Data processed to keep first complete trading days', df.shape)
+print('First date:', next_day)
+print('nan values found:', df[df.isna().any(axis=1)].shape)
+
+### saving file do output dir
+os.makedirs(output_dir, exist_ok=True)
+df.to_parquet(f'{output_dir}features.parquet')
