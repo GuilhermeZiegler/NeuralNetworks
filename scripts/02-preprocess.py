@@ -7,18 +7,20 @@ from myFunctions import install_packages, save_table
 ### packages required
 install_packages()
 
+from tabulate import tabulate
 import pandas as pd
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 ### folders 
-input_dir = '..//data//assets//'
-output_dir = '..//data//preprocess//'
-table_dir='..//results//tables//'
+input_dir = os.path.join('..', 'data', 'assets')
+output_dir = os.path.join('..', 'data', 'preprocessed')
+table_dir= os.path.join('..', 'tables', 'csv')
     
 ### Script functions
 
-def check_data(input_dir: str):
+def check_data(input_dir):
+
     """
     Loads all .parquet files from the specified directory, processes them by:
     - Extracting the ticker symbol from the filename (everything before the first '_').
@@ -58,6 +60,7 @@ def check_data(input_dir: str):
     save_table(data_info_df, title='Visualizaçao das séries de dados escolhidas')
     return data_info_df
 
+
 def elegant_inputer(df: pd.DataFrame, 
                     start_date: str = '2022-06-01 09:00:00', 
                     end_date: str = '2024-11-22 17:45:00',
@@ -79,6 +82,7 @@ def elegant_inputer(df: pd.DataFrame,
     """
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
+    
     time_intervals = pd.date_range(start=start_date, end=end_date, freq=timeframe)
     df_aux = pd.DataFrame(time_intervals, columns=['time'])
     df_aux['date'] = df_aux['time'].dt.date
@@ -89,16 +93,15 @@ def elegant_inputer(df: pd.DataFrame,
     df_inputed['tick_volume'].fillna(0, inplace=True)
     df_inputed['real_volume'].fillna(0, inplace=True)
     df_inputed = df_inputed.sort_values(by='time').reset_index(drop=True)
-    cols_to_ffill = ['open','high','low','close','spread']
-    df_inputed[cols_to_ffill] = df_inputed[cols_to_ffill].fillna(method='ffill', limit=lookback)
+    cols_to_ffill = ['open','high',	'low',	'close', 'spread']
+    df_inputed[cols_to_ffill] = df_inputed[cols_to_ffill].fillna(method='ffill',  limit=lookback)
     first_trade = start_date.time()
     last_trade = end_date.time()
     df_inputed = df_inputed[(df_inputed['time'].dt.time >= first_trade) & (df_inputed['time'].dt.time <= last_trade)]
 
     return df_inputed
 
-def process_data(input_dir: str, 
-                 output_dir: str):
+def process_data(input_dir: str, output_dir: str):
     """
     Processes all .parquet files in the specified directory, concatenating DataFrames by aligning on the 'time' column
     and appending the ticker as a suffix to each column name.
@@ -123,5 +126,16 @@ def process_data(input_dir: str,
     processed_df.to_parquet(f'{output_dir}/data.parquet')
     return processed_df
 
+
+### Visualizing data 
+df = check_data(input_dir=input_dir)
+print(tabulate(df, headers='keys', tablefmt='pretty', showindex=False))
+
+
 ### Preprocessing data 
 data = process_data(input_dir=input_dir, output_dir=output_dir)
+isna_df = pd.DataFrame(data.isna().sum(), columns=['missing_values']).reset_index()
+isna_df.columns = ['variable', 'missing_values']
+print(tabulate(isna_df, headers='keys', tablefmt='pretty', showindex=False))
+
+

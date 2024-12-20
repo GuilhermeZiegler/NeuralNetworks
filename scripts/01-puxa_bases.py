@@ -2,6 +2,13 @@
 # Currently, Clear has a free version. Log in to your real account.
 # Configure the script with login, password, and server information!
 # Required installations
+# login variables
+
+
+login = int(input('YourAccountNumber: '))   # must be a integer
+server = input('YourSever: ') # a string like 'ClearInvestimentos-CLEAR')
+password = input('YouPassword: ')
+
 import sys
 import subprocess
 import os
@@ -10,7 +17,6 @@ from myFunctions import install_packages
 install_packages()
 
 ## importing the packages
-import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
 import MetaTrader5 as mt5
@@ -52,9 +58,10 @@ def download_and_save_from_mt5(symbols: list = None,
     - server: MetaTrader server.
     - password: MetaTrader password.
     """
-
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+
+
     for symbol in symbols:
         try:
             rates = mt5.copy_rates_range(symbol, timeframe, start_date, end_date)
@@ -65,8 +72,8 @@ def download_and_save_from_mt5(symbols: list = None,
             df = pd.DataFrame(rates)
             df['time'] = pd.to_datetime(df['time'], unit='s')
             first_date = df['time'].iloc[0].strftime('%Y%m%d')
-            filename_csv = f"{save_dir}/{symbol}_data_{first_date}.csv"
-            filename_parquet = f"{save_dir}/{symbol}_data_{first_date}.parquet"
+            filename_csv = os.path.join(save_dir, f"{symbol}_data_{first_date}.csv").replace("/", "\\")
+            filename_parquet = os.path.join(save_dir, f"{symbol}_data_{first_date}.parquet").replace("/", "\\")
             df.to_csv(filename_csv, index=False)
             df.to_parquet(filename_parquet, index=False)
             print(f"Data for {symbol} saved to {filename_csv} and {filename_parquet}")
@@ -77,23 +84,31 @@ def download_and_save_from_mt5(symbols: list = None,
 
 # List of assets
 assets = [
-    'BGI$',    # Catler
-    'IAGR11',  # Fiagro
+    'AGFS',    # Iagro
+    'BGI$',    # Future Catle
+    'IND$',    # Future bovespa index
     'IBOV',    # Bovespa Index
-    'ICF$',    # Coffee
-    'CCM$',    # Corn
-    'SOJA3',   # Soybean
+    'ICON',    # Consumer Index
+    'ICF$',    # Future Coffee
+    'CCM$',    # Future Corn
     'IVVB11',  # ETF (S&P500)
-    'GOLD11'   # Gold
+    'GOLD11',  # Future Gold
+    'DOL$',    # Future Dollar
+    'DI1$',    # Future Selic Proxy
+    'IFIX'     # Real state index 
+
 ]
 
 # starting date to downlaod data
 start_date = datetime(2022,6,1)
 
 # Directory to save the data
-base_dir = os.path.join('..', 'bases', 'assets')
+data_dir = os.path.join('..', 'data', 'assets').replace("/", "\\")
 
-# login variables
-login = 'YourAccountNumber' # should be a integer
-server = 'YourSever' # a string like: 'ClearInvestimentos-CLEAR'
-password = "YouPassword"  
+
+# Calling functions to stablish connection with mt5
+connect_to_mt5(login, server, password)
+download_and_save_from_mt5(symbols=assets, 
+                           timeframe= mt5.TIMEFRAME_M15,
+                           start_date = start_date,
+                           save_dir =data_dir )

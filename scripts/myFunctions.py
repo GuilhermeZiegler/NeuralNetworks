@@ -14,19 +14,24 @@ def install_packages():
         "fastparquet",
         "plotly",
         "matplotlib",
-        "MetaTrader5"
+        "MetaTrader5",
+        "tabulate"
     ]
     
+    print(f'Installing required packages: {required_packages}')
     installed_packages = {pkg.key for pkg in pkg_resources.working_set}
-
     for package in required_packages:
-        if package.lower() not in installed_packages:
-            print(f"Installing {package}...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        else:
-            print(f"{package} is already installed.")
+        try:
+            if package.lower() not in installed_packages:
+                print(f"Installing {package}...")
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+            else:
+                print(f"{package} is already installed.")
+        except Exception as e:
+            print(f"Error installing {package}: {e}")
+            raise  # Rethrow the exception after logging it
     
-    print("All packages are verified")
+    print("All packages are verified.")
 
 def save_table(df: pd.DataFrame, 
                title: str = 'Table', 
@@ -39,21 +44,25 @@ def save_table(df: pd.DataFrame,
     Args:
         df (pd.DataFrame): DataFrame to be saved.
         title (str): Title to be used in the CSV filename.
-        output_path (str): Path where the file will be saved.
+        table_dir (str): Path where the file will be saved.
     """
     os.makedirs(os.path.join(table_dir, 'csv'), exist_ok=True)
+    
     csv_path = os.path.join(table_dir, 'csv')
+
     existing_files = [f for f in os.listdir(csv_path) if title in f and f.endswith('.csv')]
+    
     if existing_files:
         file_name_csv = existing_files[0]
-        csv_output_path = os.path.join(csv_path, file_name_csv)
+        csv_output_path = os.path.join(csv_path, file_name_csv).replace("/", "\\")
     else:
         num = len([f for f in os.listdir(csv_path) if f.startswith('Tabela_')])
         num += 1
         file_name_csv = f"Tabela_{num}_{title}.csv"
-        csv_output_path = os.path.join(csv_path, file_name_csv)
+        csv_output_path = os.path.join(csv_path, file_name_csv).replace("/", "\\")
 
     df.to_csv(csv_output_path, index=False)
-    print(f"Tabela saved as CSV: {csv_output_path}")
+    print(f"Table saved as CSV: {csv_output_path}")
+
 
 

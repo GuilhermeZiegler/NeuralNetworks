@@ -4,16 +4,20 @@ import pkg_resources
 import os
 from myFunctions import install_packages
 install_packages()
+
+
 ## importing the packages
 import pandas as pd
 import numpy as np
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.set_option('display.max_columns', None)
+from tabulate import tabulate
 
-### Seting folders
-input_dir = '..//data//preprocess//'
-output_dir = '..//data//features//'
+### folders 
+input_dir = os.path.join('..', 'data', 'preprocessed')
+output_dir = os.path.join('..', 'data', 'features')
+
 
 ### Script Functions
 
@@ -31,7 +35,7 @@ def calculate_obv(df):
     Returns:
     - pd.DataFrame: A DataFrame containing OBV for each asset.
     """
-    print("Creating OBV indicator...")
+    print("\nCreating OBV indicator...\n")
     assets = {col.split('_')[1] for col in df.columns if col.startswith("close_")}
     for asset in assets:
         close_col = f"close_{asset}"
@@ -66,7 +70,7 @@ def calculate_rsi(df, period=14):
     Returns:
     - pd.DataFrame: A DataFrame containing RSI for each asset.
     """
-    print("Creating RSI indicator")
+    print("\nCreating RSI indicator\n")
     assets = {col.split('_')[1] for col in df.columns if col.startswith("close_")}
     for asset in assets:
         close_col = f"close_{asset}"
@@ -108,7 +112,7 @@ def calculate_atr(df, period=14):
     - pd.DataFrame: A DataFrame containing ATR for each asset.
     """
 
-    print("Creating ATR indicador...")
+    print("\nCreating ATR indicador...")
     assets = {col.split('_')[1] for col in df.columns if col.startswith("high_")}
     for asset in assets:
         high_col = f"high_{asset}"
@@ -140,7 +144,7 @@ def calculate_vwap(df):
     - pd.DataFrame: A DataFrame containing VWAP for each asset.
     """
     
-    print("Creating VWAP indicador...")
+    print("\nCreating VWAP indicador...\n")
     assets = {col.split('_')[1] for col in df.columns if col.startswith("close_")}
     for asset in assets:
         close_col = f"close_{asset}"
@@ -168,20 +172,20 @@ def calculate_emas(df, periods=[9, 21, 55]):
     Returns:
     - pd.DataFrame: A DataFrame containing EMAs for each asset and period.
     """
-    print('Creating EMAs')
+    print('\nCreating EMAs\n')
     assets = {col.split('_')[1] for col in df.columns if col.startswith("close_")}
     for asset in assets:
         close_col = f"close_{asset}"
         if close_col in df.columns:
             for period in periods:
                 df[f"EMA{period}_{asset}"] = df[close_col].ewm(span=period, adjust=False).mean()
-                print(f'EMA{period}_{asset}"EMA')
+                print(f'EMA{period}_{asset}')
     
     return df
 
 ### Reading data from input dir
-df = pd.read_parquet(f'{input_dir}data.parquet')
-print('df carregado', df.shape)
+df = pd.read_parquet(f'{input_dir}\data.parquet')
+print('df shape', df.shape)
 
 ### Processing features
 df = calculate_obv(df)
@@ -196,10 +200,16 @@ next_day = first_non_null_date + pd.Timedelta(days=1)
 next_day = next_day.replace(hour=9, minute=0, second=0, microsecond=0)  # Linha alterada
 next_day_row = df[df['time'].dt.date == next_day.date()].iloc[0]
 df = df[df['time'] >= next_day]
-print('Data processed to keep first complete trading days', df.shape)
-print('First date:', next_day)
-print('nan values found:', df[df.isna().any(axis=1)].shape)
+
+### Showing processed data information
+logs = [
+    ['Processed data shape', df.shape],
+    ['First date', next_day],
+    ['NaN values found', df[df.isna().any(axis=1)].shape]
+]
+
+print(tabulate(logs, headers=['Description', 'Value'], tablefmt='pretty'))
 
 ### saving file do output dir
 os.makedirs(output_dir, exist_ok=True)
-df.to_parquet(f'{output_dir}features.parquet')
+df.to_parquet(f'{output_dir}/features.parquet')

@@ -8,9 +8,11 @@ from myFunctions import install_packages, save_table
 install_packages()
 
 ### Seting folders
-input_target = '..//data//target//'
-input_features = '..//data//features//'
-output_dir = '..//data//processed_data//'
+
+### folders 
+input_target = os.path.join('..', 'data', 'target').replace("/", "\\")
+input_features = os.path.join('..', 'data', 'features').replace("/", "\\")
+output_dir = os.path.join('..', 'data', 'processed').replace("/", "\\")
 
 ### Script Functions
 
@@ -49,9 +51,9 @@ def pivot_data(df, target=None):
 
 
 ### reading features
-df_features = pd.read_parquet(f'{input_features}features.parquet')
-df_daily_target =  pd.read_parquet(f'{input_target}daily_target.parquet')
-df_timestamp_target =  pd.read_parquet(f'{input_target}timestamp_target.parquet')
+df_features = pd.read_parquet(os.path.join(input_features, 'features.parquet'))
+df_daily_target = pd.read_parquet(os.path.join(input_target, 'daily_target.parquet'))
+df_timestamp_target = pd.read_parquet(os.path.join(input_target, 'timestamp_target.parquet'))
 df_daily = df_features.copy()
 df_timestamp = df_features.copy()
 
@@ -63,19 +65,32 @@ df_timestamp = df_timestamp.merge(
     how='inner'
 )
 print(df_timestamp.shape)
+df_timestamp.dropna(inplace=True)
 
 ### pivoting timestamps to columns in order to train daily model 
 df_daily =  pivot_data(df_daily.copy())
+df_daily_target.reset_index(inplace=True)
+
 
 ### merging features and daily  targets
-df_daily = df_daily.merge(df_daily_target[['day', 'close_price_target', 'open_price_target', 'behavior_target']],
-    left_on='date', right_on='day',
-    how='inner'
+df_daily = df_daily.merge(
+    df_daily_target[['day', 'close_price_target', 'open_price_target', 'behavior_target']],
+    left_on='date', right_on='day', how='inner'
 )
-
+df_daily.dropna(inplace=True)
 ### Saving data and tables
 save_table(df_daily.head(6), title = 'Exemplo do Target diário para o fechamento, abertura e comportamento do mercado')
 save_table(df_timestamp.head(6), title = 'Exemplo do Target timestamp para o fechamento, abertura e comportamento do mercado')
 os.makedirs(output_dir, exist_ok=True)
-df_daily.to_parquet(f'{output_dir}df_daily.parquet')
-df_timestamp.to_parquet(f'{output_dir}df_timestamp.parquet')
+
+daily_name = 'df_daily.parquet'
+timestamp_name = 'df_timestamp.parquet'
+
+daily_path = os.path.join(output_dir, daily_name).replace("/", "\\")
+timestamp_path = os.path.join(output_dir, timestamp_name).replace("/", "\\")
+
+df_daily.to_parquet(daily_path)
+df_timestamp.to_parquet(timestamp_path)
+
+print(f'{daily_name} saved to {daily_path}')
+print(f'{timestamp_name} saved to {timestamp_path}')

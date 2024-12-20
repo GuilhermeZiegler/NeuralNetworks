@@ -12,8 +12,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.set_option('display.max_columns', None)
 
 ### Seting folders
-input_dir = '..//data//features//'
-output_dir = '..//data//target//'
+input_dir = os.path.join('..', 'data', 'features')
+output_dir = os.path.join('..', 'data', 'target')
 
 ### Script Functions
 def generate_targets(df, asset, timeframe=None):
@@ -79,8 +79,8 @@ def generate_targets(df, asset, timeframe=None):
     return target_df
 
 ### reading features
-df = pd.read_parquet(f'{input_dir}features.parquet')
-print('df carregado', df.shape)
+df = pd.read_parquet(f'{input_dir}/features.parquet')
+print('df shape: ', df.shape)
 
 ### Generating Targets for timestamp model and daily models
 target_day_df = generate_targets(df, asset='BGI$', timeframe='day')
@@ -88,8 +88,8 @@ target_df = generate_targets(df, asset='BGI$')
 
 ### Saving data and tables
 os.makedirs(output_dir, exist_ok=True)
-target_df.to_parquet(f'{output_dir}timestamp_target.parquet')
-target_day_df.to_parquet(f'{output_dir}daily_target.parquet')
+target_df.to_parquet(f'{output_dir}/timestamp_target.parquet')
+target_day_df.to_parquet(f'{output_dir}/daily_target.parquet')
 
 save_table(target_day_df.head(6), title = 'Exemplo do Target diário para o fechamento, abertura e comportamento do mercado')
 save_table(target_df.head(6), title = 'Exemplo do Target timestamp para o fechamento, abertura e comportamento do mercado')
