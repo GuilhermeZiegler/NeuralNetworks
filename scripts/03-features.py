@@ -10,6 +10,7 @@ install_packages()
 import pandas as pd
 import numpy as np
 import warnings
+import joblib
 warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.set_option('display.max_columns', None)
 from tabulate import tabulate
@@ -213,3 +214,9 @@ print(tabulate(logs, headers=['Description', 'Value'], tablefmt='pretty'))
 ### saving file do output dir
 os.makedirs(output_dir, exist_ok=True)
 df.to_parquet(f'{output_dir}/features.parquet')
+
+features = df.columns.drop([col for col in df.columns if 'target' in col or 'time' in col])
+joblib.dump(features, f'{output_dir}/features.pkl')
+
+
+print(features)

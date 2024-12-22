@@ -15,7 +15,11 @@ def install_packages():
         "plotly",
         "matplotlib",
         "MetaTrader5",
-        "tabulate"
+        "tabulate",
+        "optuna",
+        "torch",
+        "tqdm",
+        "shap"
     ]
     
     print(f'Installing required packages: {required_packages}')

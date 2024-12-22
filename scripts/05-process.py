@@ -1,18 +1,21 @@
 import sys
-import subprocess
-import pkg_resources
 import os
-import pandas as pd
+
 sys.path.append(os.path.abspath('../scripts'))
+import myFunctions
 from myFunctions import install_packages, save_table 
 install_packages()
 
-### Seting folders
+### required packages
+import joblib
+import pandas as pd
 
 ### folders 
 input_target = os.path.join('..', 'data', 'target').replace("/", "\\")
 input_features = os.path.join('..', 'data', 'features').replace("/", "\\")
 output_dir = os.path.join('..', 'data', 'processed').replace("/", "\\")
+output_features =  os.path.join('..', 'data', 'features').replace("/", "\\")
+
 
 ### Script Functions
 
@@ -78,9 +81,12 @@ df_daily = df_daily.merge(
     left_on='date', right_on='day', how='inner'
 )
 df_daily.dropna(inplace=True)
+df_daily.drop(columns=['day'], inplace=True)
+
 ### Saving data and tables
-save_table(df_daily.head(6), title = 'Exemplo do Target diário para o fechamento, abertura e comportamento do mercado')
+
 save_table(df_timestamp.head(6), title = 'Exemplo do Target timestamp para o fechamento, abertura e comportamento do mercado')
+save_table(df_daily.head(6), title = 'Exemplo do Target diário para o fechamento, abertura e comportamento do mercado')
 os.makedirs(output_dir, exist_ok=True)
 
 daily_name = 'df_daily.parquet'
@@ -94,3 +100,15 @@ df_timestamp.to_parquet(timestamp_path)
 
 print(f'{daily_name} saved to {daily_path}')
 print(f'{timestamp_name} saved to {timestamp_path}')
+
+features = df_daily.columns.drop([col for col in df_daily.columns if 'target' in col or 'day' in col or 'date' in col])
+joblib.dump(features, f'{output_features}/daily_features.pkl')
+print(f'df_daily_features saved to {output_features}')
+
+features = df_timestamp.columns.drop([col for col in df_timestamp.columns if 'target' in col or 'time' in col])
+joblib.dump(features, f'{output_features}/timestamp_15min_features.pkl')
+print(f'df_timestamp_features saved to {output_features}')
+
+
+
+
