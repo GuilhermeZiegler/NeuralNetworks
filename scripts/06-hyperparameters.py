@@ -14,6 +14,7 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error, accuracy_score
 from torch.utils.data import DataLoader, TensorDataset
@@ -145,18 +146,13 @@ def segment_data(df, test_size=0.15):
     
     return train_data,test_data
 
-### Training and Testing Pipeline
+
 def train_evaluate_model(trial, X_train, y_train, X_test, y_test, target, window_size, look_forward, model_type, study_name, model_dir):
-    """
-    Train and evaluate the model based on the suggested hyperparameters.
-    """
-    # Convert data to tensors
     X_train = torch.tensor(X_train, dtype=torch.float32)
     y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(1)
     X_test = torch.tensor(X_test, dtype=torch.float32)
     y_test = torch.tensor(y_test, dtype=torch.float32).unsqueeze(1)
 
-    # Hyperparameter suggestions
     epochs = trial.suggest_int('epochs', 10, 20)
     batch_size = trial.suggest_categorical('batch_size', [32, 64])
     learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-2, log=True)
@@ -167,7 +163,7 @@ def train_evaluate_model(trial, X_train, y_train, X_test, y_test, target, window
     if model_type in ['CNN-LSTM', 'CNN-GRU']:
         conv_filters = trial.suggest_categorical('conv_filters', [32, 64, 128])
 
-    # Model selection
+    # Initialize model based on type
     if model_type == 'LSTM':
         model = LSTMModel(input_size=X_train.shape[2], hidden_size=hidden_size, num_layers=num_layers, dropout=dropout)
     elif model_type == 'GRU':
@@ -177,31 +173,31 @@ def train_evaluate_model(trial, X_train, y_train, X_test, y_test, target, window
     elif model_type == 'CNN-GRU':
         model = CNNGRUModel(input_size=X_train.shape[2], hidden_size=hidden_size, num_layers=num_layers, dropout=dropout, conv_filters=conv_filters)
 
-    # Optimizer and loss function
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.MSELoss() if 'price' in target else nn.BCELoss()
 
-    # DataLoader for training
     train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=batch_size, shuffle=False)
 
     average_losses = {epoch: [] for epoch in range(epochs)}
 
-    # Training loop
     for epoch in range(epochs):
         model.train()
         total_loss = 0
         for X_batch, y_batch in train_loader:
             optimizer.zero_grad()
             output = model(X_batch)
+            if 'behavior' in target:
+                output = torch.sigmoid(output)
+                
+            output = output.view(-1, 1) 
+            y_batch = y_batch.view(-1, 1)
             loss = criterion(output, y_batch)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()  # Accumulate the loss
+            total_loss += loss.item()
 
-        # Print loss for each epoch
         avg_loss = total_loss / len(train_loader)
-        for epoch in range(epochs):
-            average_losses[epoch].append(avg_loss)
+        average_losses[epoch].append(avg_loss)
 
     # Evaluation on test data
     model.eval()
@@ -217,18 +213,33 @@ def train_evaluate_model(trial, X_train, y_train, X_test, y_test, target, window
     predictions = np.concatenate(predictions, axis=0)
     true_values = np.concatenate(true_values, axis=0)
 
+    # Calculate error based on target
     if 'price' in target:
         error = mean_squared_error(true_values, predictions)
     else:
         predictions = (predictions > 0.5).astype(int)
         error = -accuracy_score(true_values, predictions)
 
+    # Save loss decay file
     loss_decay_file = os.path.join(model_dir, f"{study_name}_loss_decay.pkl")
     with open(loss_decay_file, 'wb') as f:
         joblib.dump(average_losses, f)
 
-    return error
+    # Plot and save loss decay graph
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(epochs), [np.mean(loss) for loss in average_losses.values()], label='Average Training Loss')
+    plt.title(f'Loss Decay Over Epochs for {study_name}')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
 
+    # Save the plot as an image
+    loss_plot_file = os.path.join(model_dir, f"{study_name}_loss_decay_plot.png")
+    plt.savefig(loss_plot_file)
+    plt.close()
+
+    return error
 
 def optimize_models(df, targets, features, windows, look_forwards, max_samples=100):
     """

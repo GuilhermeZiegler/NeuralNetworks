@@ -1,0 +1,23 @@
+// Neural Network Training Pipeline
+digraph {
+	Input [label="Input (7 time steps)
+[Feature1, Feature2, ...]"]
+	Feedforward [label="Feedforward Pass"]
+	NeuralNet [label="Neural Network Layers
+(LSTM/GRU, Activation Func.)"]
+	Output [label="Predicted Output
+(Prediction for next time step, e.g., Y8)"]
+	Loss [label="Calculate Loss/Error
+(MSE, BCE, etc.)"]
+	Backprop [label="Backpropagate Error/Gradients
+(via chain rule)"]
+	Update [label="Update Weights
+(via Gradient Descent)"]
+	Input -> Feedforward
+	Feedforward -> NeuralNet
+	NeuralNet -> Output
+	Output -> Loss
+	Loss -> Backprop
+	Backprop -> Update
+	Update -> Feedforward
+}

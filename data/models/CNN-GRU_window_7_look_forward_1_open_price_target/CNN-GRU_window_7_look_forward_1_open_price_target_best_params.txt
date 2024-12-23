@@ -1,7 +1,0 @@
-epochs: 19
-batch_size: 32
-learning_rate: 4.54182608282566e-05
-dropout: 0.48165425294814895
-num_layers: 3
-hidden_size: 83
-conv_filters: 32

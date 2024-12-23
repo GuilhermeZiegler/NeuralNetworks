@@ -19,11 +19,15 @@ def install_packages():
         "optuna",
         "torch",
         "tqdm",
-        "shap"
+        "shap",
+        "kaleido"
     ]
     
     print(f'Installing required packages: {required_packages}')
+    # Checking installed packages
     installed_packages = {pkg.key for pkg in pkg_resources.working_set}
+    
+    # Install missing packages
     for package in required_packages:
         try:
             if package.lower() not in installed_packages:
@@ -33,7 +37,7 @@ def install_packages():
                 print(f"{package} is already installed.")
         except Exception as e:
             print(f"Error installing {package}: {e}")
-            raise  # Rethrow the exception after logging it
+            continue  # Continue with other packages, log the error but don't stop the process
     
     print("All packages are verified.")
 

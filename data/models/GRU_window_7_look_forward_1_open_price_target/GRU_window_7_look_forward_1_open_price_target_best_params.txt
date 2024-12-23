@@ -1,6 +1,0 @@
-epochs: 11
-batch_size: 64
-learning_rate: 2.820141560528315e-05
-dropout: 0.3878949696343218
-num_layers: 2
-hidden_size: 59
