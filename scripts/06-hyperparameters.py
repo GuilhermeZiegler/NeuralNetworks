@@ -174,10 +174,10 @@ def train_evaluate_model(trial, X_train, y_train, X_test, y_test, target, window
         model = CNNGRUModel(input_size=X_train.shape[2], hidden_size=hidden_size, num_layers=num_layers, dropout=dropout, conv_filters=conv_filters)
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = nn.MSELoss() if 'price' in target else nn.BCELoss()
+    criterion = nn.MSELoss() if 'price' in target else nn.BCEWithLogitsLoss()
 
     train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=batch_size, shuffle=False)
-
+    display(train_loader)
     average_losses = {epoch: [] for epoch in range(epochs)}
 
     for epoch in range(epochs):
@@ -185,10 +185,7 @@ def train_evaluate_model(trial, X_train, y_train, X_test, y_test, target, window
         total_loss = 0
         for X_batch, y_batch in train_loader:
             optimizer.zero_grad()
-            output = model(X_batch)
-            if 'behavior' in target:
-                output = torch.sigmoid(output)
-                
+            output = model(X_batch)        
             output = output.view(-1, 1) 
             y_batch = y_batch.view(-1, 1)
             loss = criterion(output, y_batch)
@@ -218,7 +215,9 @@ def train_evaluate_model(trial, X_train, y_train, X_test, y_test, target, window
         error = mean_squared_error(true_values, predictions)
     else:
         predictions = (predictions > 0.5).astype(int)
-        error = -accuracy_score(true_values, predictions)
+        print("predictions", predictions)
+        print("True Values", true_values)
+        error = accuracy_score(true_values, predictions)
 
     # Save loss decay file
     loss_decay_file = os.path.join(model_dir, f"{study_name}_loss_decay.pkl")
@@ -241,18 +240,18 @@ def train_evaluate_model(trial, X_train, y_train, X_test, y_test, target, window
 
     return error
 
-def optimize_models(df, targets, features, windows, look_forwards, max_samples=100):
+def optimize_models(df, targets, target_type, features, windows, look_forwards, max_samples=100):
     """
     Optimizes models using Optuna for hyperparameter tuning. Now prepares the data within the function.
     """
     study_results = {}
-    input_dir = os.path.join('..', 'data', 'models')
-    input_dir = input_dir.replace("/", "\\")  # Ensure correct path format
+    input_dir = os.path.join('..', 'data', 'models', target_type).replace("/", "\\")  
     if not os.path.exists(input_dir):
         os.makedirs(input_dir)
     
     exclude_columns = ['date', 'day']
-    df_scaled, scalers = scale_features(df, exclude_columns)
+    df_scaled, _ = scale_features(df, exclude_columns)
+    df_scaled, scalers = scale_features(df)
     train_data, test_data = segment_data(df_scaled, test_size=0.15)
     
     for window_size in windows:
@@ -276,8 +275,13 @@ def optimize_models(df, targets, features, windows, look_forwards, max_samples=1
                     if not os.path.exists(model_dir):
                         os.makedirs(model_dir)
                     
+                    if 'price' in target:
+                        direction = 'minimize'
+                    else:
+                        direction = 'maximize'
+                        
                     # Creating the Optuna study
-                    study = optuna.create_study(direction='minimize', study_name=study_name)
+                    study = optuna.create_study(direction=direction, study_name=study_name)
                     study.optimize(
                         lambda trial: train_evaluate_model(
                             trial, X_train, y_train, X_test, y_test, target, window_size, look_forward, model_type, study_name, model_dir
@@ -288,7 +292,6 @@ def optimize_models(df, targets, features, windows, look_forwards, max_samples=1
                     study_file = os.path.join(model_dir, f"{study_name}_study.pkl").replace("/", "\\")
                     joblib.dump(study, study_file)
                     print(f'{study_name} saved to {study_file}')
-
 
                     best_params = study.best_params
                     best_trial_index = study.best_trial.number 

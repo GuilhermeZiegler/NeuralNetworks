@@ -2,7 +2,6 @@ import sys
 import subprocess
 import pkg_resources
 import os
-import pandas as pd
 
 def install_packages():
     required_packages = [
@@ -41,6 +40,8 @@ def install_packages():
     
     print("All packages are verified.")
 
+
+import pandas as pd
 def save_table(df: pd.DataFrame, 
                title: str = 'Table', 
                table_dir: str = '../results/tables/'):
