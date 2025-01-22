@@ -80,45 +80,54 @@ def save_table(df: pd.DataFrame,
     print(f"Table saved as CSV: {csv_output_path}")
 
 
+
 def make_stationary(df: pd.DataFrame(), 
-                    max_diffs:int):
+                    max_diffs: int = 5):
     """
     Make the given dataframe stationary by applying differencing.
 
     Args:
         df (pd.DataFrame): DataFrame containing time series data.
-        N_MAX (int): Maximum number of differencing iterations to perform.
+        max_diffs (int): Maximum number of differencing iterations to perform.
 
     Returns:
         pd.DataFrame: DataFrame with columns showing the stationarity status after each differencing iteration.
     """
 
     diff_df = df.copy()
-    result_df = pd.DataFrame(index=diff_df.columns)
+    result_df = pd.DataFrame(index=df.columns)  # Start with columns as index for results
     stationary_set = set()
+    diff_counts = {col: 0 for col in df.columns}  # Track number of differencing for each column
 
     for i in range(max_diffs):
+        # Perform differencing only if it's not the first iteration
         if i != 0:
             diff_df = diff_df.diff()
             diff_df.dropna(inplace=True)
-
-        _, stationary_cols, non_stationary_cols = adfuller_test(diff_df)
-        stationary_set.update(stationary_cols)
-
-        for col in diff_df.columns:
+        
+        non_stationary_cols, current_result_df = adfuller_test(diff_df)
+        
+        # Update stationary columns
+        stationary_set.update([col for col in df.columns if col not in non_stationary_cols])
+        
+        # Track how many times each column needed differencing
+        for col in df.columns:
             if col in stationary_set:
-                if f'stationary_{i}' not in result_df.columns:
-                    result_df[f'stationary_{i}'] = ''
-                if result_df.loc[col, f'stationary_{i}'] != 'S':
-                    result_df.loc[col, f'stationary_{i}'] = 'S'
+                diff_counts[col] = i  # Mark the number of differences for stationary columns
 
-        if len(non_stationary_cols) == 0:
-            print(f"All variables became stationary after {i} differences.")
+        # If all columns are stationary, break the loop
+        if len(stationary_set) == len(df.columns):
             break
-        elif i == max_diffs - 1:
-            print(f"Maximum iterations ({max_diffs}) reached, some variables are still non-stationary.")
-            
-    print(result_df)
+        
+        # Only keep non-stationary columns for the next iteration
+        diff_df = diff_df[non_stationary_cols]
+
+    # Update result_df with diff_counts
+    result_df['diff'] = result_df.index.map(diff_counts)
+    
+    return result_df
+
+
 
 def adfuller_test(df, critical_level='5%'):
     # Check if the critical level is valid
@@ -141,7 +150,7 @@ def adfuller_test(df, critical_level='5%'):
         # Append to the non_stationary list if not stationary
         if is_stationary == 0:
             non_stationary.append(col)
-
+        
         # Collect results for each variable
         row = {
             'Variable': col,
@@ -152,7 +161,7 @@ def adfuller_test(df, critical_level='5%'):
             '10%': critical_vals['10%'],
             'res': is_stationary  # 1 for Stationary, 0 for Non-Stationary
         }
-
+        print(row)
         # Append row to result_df
         result_df = pd.concat([result_df, pd.DataFrame([row])], ignore_index=True)
 

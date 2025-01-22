@@ -1,0 +1,6 @@
+Start Date,End Date,Cointegrated Variables,Cointegration (Trace),Ranking (Trace),Cointegration (Max Eigenvalue),Ranking (Max Eigenvalue),Eigenvalues
+2022-06-02 09:00:00,2022-07-14 17:45:00,"['close_BGI$'], close_AGFS",0,0,0,0,[4.33746146e-05]
+2022-06-02 09:00:00,2022-07-14 17:45:00,"['close_BGI$'], close_CCM$",0,0,0,0,[4.33746146e-05]
+2022-06-02 09:00:00,2022-07-14 17:45:00,"['close_BGI$'], close_DI1$",0,0,0,0,[4.33746146e-05]
+2022-06-02 09:00:00,2022-07-14 17:45:00,"['close_BGI$'], close_DOL$",0,0,0,0,[4.33746146e-05]
+2022-06-02 09:00:00,2022-07-14 17:45:00,"['close_BGI$'], close_GOLD11",0,0,0,0,[4.33746146e-05]
