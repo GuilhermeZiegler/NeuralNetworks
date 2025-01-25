@@ -83,13 +83,13 @@ df = pd.read_parquet(f'{input_dir}/features.parquet')
 print('df shape: ', df.shape)
 
 ### Generating Targets for timestamp model and daily models
-target_day_df = generate_targets(df, asset='BGI$', timeframe='day')
-target_df = generate_targets(df, asset='BGI$')
+D1_df_target = generate_targets(df, asset='BGI$', timeframe='day')
+M15_df_target = generate_targets(df, asset='BGI$')
 
 ### Saving data and tables
 os.makedirs(output_dir, exist_ok=True)
-target_df.to_parquet(f'{output_dir}/timestamp_target.parquet')
-target_day_df.to_parquet(f'{output_dir}/daily_target.parquet')
+M15_df_target.to_parquet(f'{output_dir}/target_M15_df.parquet')
+D1_df_target.to_parquet(f'{output_dir}/D1_df_target.parquet')
 
-save_table(target_day_df.head(6), title = 'Exemplo do Target diário para o fechamento, abertura e comportamento do mercado')
-save_table(target_df.head(6), title = 'Exemplo do Target timestamp para o fechamento, abertura e comportamento do mercado')
+save_table(D1_df_target.head(6), title = 'Exemplo do Target D1 para o fechamento, abertura e comportamento do mercado')
+save_table(M15_df_target.head(6), title = 'Exemplo do Target M15 para o fechamento, abertura e comportamento do mercado')

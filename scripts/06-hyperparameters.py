@@ -5,31 +5,27 @@ from myFunctions import install_packages, save_table
 ### packages required
 install_packages()
 
-### importing required packages
-from tabulate import tabulate
+### importing manipulation packages
 import pandas as pd
-import optuna
+import numpy as np
+from tqdm import tqdm
+import joblib
+import matplotlib.pyplot as plt
+
+### importing torch packages
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
-from tqdm import tqdm
+from torch.utils.data import DataLoader, TensorDataset
 
-import kaleido
+### importing optuna packages
+import optuna
+import optuna.visualization as vis
+
+### importing metrics packages
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import mean_squared_error, accuracy_score
-
-import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
-import optuna
-import optuna.visualization as vis
-import os
-import joblib
-import matplotlib.pyplot as plt
-import torch
-
-
 
 ## Model Classes
 # LSTM Model
@@ -386,9 +382,9 @@ def optimize_models(df: pd.DataFrame,
     study_results = {}
 
     if target_dir is not None:
-        input_dir = os.path.join('..', 'data', 'models', target_dir)
+        input_dir = os.path.join('..', 'data', 'hyperparameters', target_dir)
     else:
-        input_dir = os.path.join('..', 'data', 'models')
+        input_dir = os.path.join('..', 'data', 'hyperparameters')
 
     if not os.path.exists(input_dir):
         os.makedirs(input_dir)
@@ -478,23 +474,25 @@ def optimize_models(df: pd.DataFrame,
 
     return study_results
 
-
-
-
 ### Loading data to optuna
 input_dir = os.path.join('..', 'data', 'processed')
-features_name = 'daily_features.pkl'
+features_name = 'D1_features.pkl'
 input_dir_features = os.path.join('..', 'data', 'features')
 
-df_daily = pd.read_parquet(os.path.join(input_dir, 'df_daily.parquet')).replace("/", "\\")
-df_timestamp = pd.read_parquet(os.path.join(input_dir, 'df_timestamp.parquet')).replace("/", "\\")
-daily_features = joblib.load(os.path.join(input_dir_features, 'daily_features.pkl'))
-timnestamp_features = joblib.load(os.path.join(input_dir_features, '15min_timestamp_features.pkl'))
+D1_df = pd.read_parquet(os.path.join(input_dir, 'D1_df.parquet'))
+M15_df = pd.read_parquet(os.path.join(input_dir, 'M15_df.parquet'))
+D1_features = joblib.load(os.path.join(input_dir_features, 'D1_features.pkl'))
+M15_features = joblib.load(os.path.join(input_dir_features, 'M15_features.pkl'))
 
-features = daily_features
+models = ['LSTM', 'GRU', 'CNN-LSTM', 'CNN-GRU'] # define one or more models
 targets = ['close_price_target', 'open_price_target', 'behavior_target']
 windows = [7, 15, 30, 45, 60] 
 look_forwards = [1]  
 
-# Call the optimize_models function
-study_results = optimize_models(df_daily,targets,features, windows, look_forwards, max_samples=50)
+# Call the optimize_models function with acess to a GPU otherwise it's definetly not going to work
+study_results = optimize_models(D1_df,
+                                targets=targets,
+                                features=D1_features, 
+                                windows=windows, 
+                                look_forwards=look_forwards,
+                                max_samples=50)

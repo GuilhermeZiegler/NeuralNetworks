@@ -11,10 +11,10 @@ import joblib
 import pandas as pd
 
 ### folders 
-input_target = os.path.join('..', 'data', 'target').replace("/", "\\")
-input_features = os.path.join('..', 'data', 'features').replace("/", "\\")
-output_dir = os.path.join('..', 'data', 'processed').replace("/", "\\")
-output_features =  os.path.join('..', 'data', 'features').replace("/", "\\")
+input_target = os.path.join('..', 'data', 'target')
+input_features = os.path.join('..', 'data', 'features')
+output_dir = os.path.join('..', 'data', 'processed')
+output_features =  os.path.join('..', 'data', 'features')
 
 
 ### Script Functions
@@ -55,59 +55,59 @@ def pivot_data(df, target=None):
 
 ### reading features
 df_features = pd.read_parquet(os.path.join(input_features, 'features.parquet'))
-df_daily_target = pd.read_parquet(os.path.join(input_target, 'daily_target.parquet'))
-df_timestamp_target = pd.read_parquet(os.path.join(input_target, 'timestamp_target.parquet'))
-df_daily = df_features.copy()
-df_timestamp = df_features.copy()
+D1_df_target = pd.read_parquet(os.path.join(input_target, 'D1_df_target.parquet'))
+M15_df_target = pd.read_parquet(os.path.join(input_target, 'M15_df_target.parquet'))
+D1_df = df_features.copy()
+M15_df = df_features.copy()
 
 ### merging features and timestamps targets
-print(df_timestamp_target.shape)
-df_timestamp = df_timestamp.merge(
-    df_timestamp_target[['time', 'close_price_target', 'open_price_target', 'behavior_target']],
+print(M15_df_target.shape)
+M15_df = M15_df.merge(
+    M15_df_target[['time', 'close_price_target', 'open_price_target', 'behavior_target']],
     on='time',
     how='inner'
 )
-print(df_timestamp.shape)
-df_timestamp.dropna(inplace=True)
+print(M15_df.shape)
+M15_df.dropna(inplace=True)
 
 ### pivoting timestamps to columns in order to train daily model 
-df_daily =  pivot_data(df_daily.copy())
-df_daily_target.reset_index(inplace=True)
+D1_df =  pivot_data(D1_df.copy())
+D1_df_target.reset_index(inplace=True)
 
 
 ### merging features and daily  targets
-df_daily = df_daily.merge(
-    df_daily_target[['day', 'close_price_target', 'open_price_target', 'behavior_target']],
+D1_df = D1_df.merge(
+    D1_df_target[['day', 'close_price_target', 'open_price_target', 'behavior_target']],
     left_on='date', right_on='day', how='inner'
 )
-df_daily.dropna(inplace=True)
-df_daily.drop(columns=['day'], inplace=True)
+D1_df.dropna(inplace=True)
+D1_df.drop(columns=['day'], inplace=True)
 
 ### Saving data and tables
 
-save_table(df_timestamp.head(6), title = 'Exemplo do Target timestamp para o fechamento, abertura e comportamento do mercado')
-save_table(df_daily.head(6), title = 'Exemplo do Target diário para o fechamento, abertura e comportamento do mercado')
+save_table(M15_df.head(6), title = 'Exemplo do Target timestamp para o fechamento, abertura e comportamento do mercado')
+save_table(D1_df.head(6), title = 'Exemplo do Target diário para o fechamento, abertura e comportamento do mercado')
 os.makedirs(output_dir, exist_ok=True)
 
-daily_name = 'df_daily.parquet'
-timestamp_name = 'df_timestamp.parquet'
+D1_name = 'D1_df.parquet'
+M15_name = 'M15_df.parquet'
 
-daily_path = os.path.join(output_dir, daily_name).replace("/", "\\")
-timestamp_path = os.path.join(output_dir, timestamp_name).replace("/", "\\")
+D1_path = os.path.join(output_dir, D1_name)
+M15_path = os.path.join(output_dir, M15_name)
 
-df_daily.to_parquet(daily_path)
-df_timestamp.to_parquet(timestamp_path)
+D1_df.to_parquet(D1_path)
+M15_df.to_parquet(M15_path)
 
-print(f'{daily_name} saved to {daily_path}')
-print(f'{timestamp_name} saved to {timestamp_path}')
+print(f'{D1_name} saved to {D1_path}')
+print(f'{M15_path} saved to {M15_path}')
 
-features = df_daily.columns.drop([col for col in df_daily.columns if 'target' in col or 'day' in col or 'date' in col])
-joblib.dump(features, f'{output_features}/daily_features.pkl')
-print(f'df_daily_features saved to {output_features}')
+features = D1_df.columns.drop([col for col in D1_df.columns if 'target' in col or 'day' in col or 'date' in col])
+joblib.dump(features, f'{output_features}/D1_features.pkl')
+print(f'D1_df_features saved to {output_features}')
 
-features = df_timestamp.columns.drop([col for col in df_timestamp.columns if 'target' in col or 'time' in col])
-joblib.dump(features, f'{output_features}/timestamp_15min_features.pkl')
-print(f'df_timestamp_features saved to {output_features}')
+features = M15_df.columns.drop([col for col in M15_df.columns if 'target' in col or 'time' in col])
+joblib.dump(features, f'{output_features}/M15_features.pkl')
+print(f'M15_df_features saved to {output_features}')
 
 
 

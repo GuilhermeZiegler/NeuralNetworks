@@ -23,9 +23,10 @@ def install_packages():
         "shap",
         "kaleido",
         "statsmodels", 
-        "re"
+        "tqdm"
+
     ]
-    
+   
     print(f'Installing required packages: {required_packages}')
     # Checking installed packages
     installed_packages = {pkg.key for pkg in pkg_resources.working_set}

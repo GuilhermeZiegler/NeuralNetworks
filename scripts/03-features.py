@@ -19,9 +19,7 @@ from tabulate import tabulate
 input_dir = os.path.join('..', 'data', 'preprocessed')
 output_dir = os.path.join('..', 'data', 'features')
 
-
 ### Script Functions
-
 # Function to calculate OBV
 def calculate_obv(df):
     """
@@ -217,6 +215,4 @@ df.to_parquet(f'{output_dir}/features.parquet')
 
 features = df.columns.drop([col for col in df.columns if 'target' in col or 'time' in col])
 joblib.dump(features, f'{output_dir}/features.pkl')
-
-
 print(features)
